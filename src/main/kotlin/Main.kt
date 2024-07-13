@@ -1,8 +1,9 @@
 package dev.tandosid.playground.kotlin
 
-import dev.tandosid.playground.kotlin.EngineType.FOUR_STROKE
-import dev.tandosid.playground.kotlin.EngineType.TWO_STROKE
-import dev.tandosid.playground.kotlin.VehicleType.BIKE
+import dev.tandosid.playground.kotlin.EngineTypeDto.FOUR_STROKE
+import dev.tandosid.playground.kotlin.EngineTypeDto.TWO_STROKE
+import dev.tandosid.playground.kotlin.VehicleTypeDto.BIKE
+import dev.tandosid.playground.kotlin.VehicleTypeDto.CAR
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -26,25 +27,33 @@ fun main() {
     println(fourStrokeBikeJson)
 }
 
-fun createRandomVehicleResponse(vehicleType: VehicleType, engineType: EngineType): String {
+fun createRandomVehicleResponse(vehicleType: VehicleTypeDto, engineType: EngineTypeDto): String {
     val engine = when(engineType) {
         TWO_STROKE -> TwoStroke
         FOUR_STROKE -> FourStroke
     }
 
+    fun mileage() = Random.nextLong(10, 1000)
+    fun yearOfManufacturing() = Year.of(Random.nextInt(1999, Year.now(Clock.systemUTC()).value))
     val vehicle = when (vehicleType) {
         BIKE -> Bike(
             engine = engine,
-            mileage = Random.nextLong(10, 1000),
-            yearOfManufacturing = Year.of(Random.nextInt(1999, Year.now(Clock.systemUTC()).value))
+            mileage = mileage(),
+            yearOfManufacturing = yearOfManufacturing()
+        )
+
+        CAR -> Car(
+            engine = engine,
+            mileage = mileage(),
+            yearOfManufacturing = yearOfManufacturing()
         )
     }
 
-    // This casting is required for polymorphic behaviour to work properly
+    // This casting is required for polymorphic encoding behaviour to work properly
     return Json.encodeToString(vehicle as Vehicle)
 }
 
-enum class EngineType {
+enum class EngineTypeDto {
     TWO_STROKE,
     FOUR_STROKE
 }
@@ -61,8 +70,9 @@ data object TwoStroke: Engine(2)
 data object FourStroke: Engine(4)
 
 
-enum class VehicleType {
-    BIKE
+enum class VehicleTypeDto {
+    BIKE,
+    CAR
 }
 
 @Serializable
@@ -73,6 +83,15 @@ sealed interface Vehicle {
 @Serializable
 @SerialName("bike")
 data class Bike(
+    val mileage: Long,
+    override val engine: Engine,
+    @Serializable(YearSerializer::class)
+    val yearOfManufacturing: Year,
+): Vehicle
+
+@Serializable
+@SerialName("car")
+data class Car(
     val mileage: Long,
     override val engine: Engine,
     @Serializable(YearSerializer::class)
