@@ -40,7 +40,8 @@ fun createRandomVehicleResponse(vehicleType: VehicleType, engineType: EngineType
         )
     }
 
-    return Json.encodeToString(vehicle)
+    // This casting is required for polymorphic behaviour to work properly
+    return Json.encodeToString(vehicle as Vehicle)
 }
 
 enum class EngineType {
